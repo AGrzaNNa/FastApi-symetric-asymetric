@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encryption App</title>
+</head>
+<body>
+    <h1>Symmetric Encryption</h1>
+    <form action="/symmetric/key" method="post">
+        <button type="submit">Generate Symmetric Key</button>
+    </form>
+
+    <form action="/symmetric/encode" method="post">
+        <input type="text" name="message" placeholder="Enter message to encrypt">
+        <button type="submit">Encrypt Message</button>
+    </form>
+
+    <form action="/symmetric/decode" method="post">
+        <input type="text" name="encrypted_message" placeholder="Enter encrypted message">
+        <button type="submit">Decrypt Message</button>
+    </form>
+
+    <h1>Asymmetric Encryption</h1>
+    <form action="/asymmetric/key" method="post">
+        <button type="submit">Generate Asymmetric Key Pair</button>
+    </form>
+
+    <form action="/asymmetric/encrypt" method="post">
+        <input type="text" name="message" placeholder="Enter message to encrypt">
+        <button type="submit">Encrypt Message</button>
+    </form>
+
+    <form action="/asymmetric/decrypt" method="post">
+        <input type="text" name="ciphertext" placeholder="Enter ciphertext">
+        <button type="submit">Decrypt Message</button>
+    </form>
+
+    <h1>Signature</h1>
+    <form action="/asymmetric/sign" method="post">
+        <input type="text" name="message" placeholder="Enter message to sign">
+        <button type="submit">Sign Message</button>
+    </form>
+
+    <form action="/asymmetric/verify" method="post">
+        <input type="text" name="message" placeholder="Enter message">
+        <input type="text" name="signature" placeholder="Enter signature">
+        <button type="submit">Verify Signature</button>
+    </form>
+</body>
+</html>
