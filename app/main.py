@@ -1,16 +1,13 @@
 import logging
 from typing import Union
 from cryptography.exceptions import InvalidSignature
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from fastapi import FastAPI, HTTPException
-import base64
-import paramiko
-import binascii
 from cryptography.fernet import Fernet
-import secrets
+import binascii
+
 app = FastAPI()
 
 # Global variables to store keys
@@ -22,12 +19,10 @@ private_key_rsa = None
 @app.get("/symmetric/key", tags=["symmetric-key"])
 def generate_symmetric_key():
     """
-      Generates a symmetric key for encryption.
-
-      Returns:
-          dict: A dictionary containing the generated symmetric key.
-      """
-
+    Generates a symmetric key for encryption.
+    Returns:
+        dict: A dictionary containing the generated symmetric key.
+    """
     global symmetric_key
     symmetric_key = Fernet.generate_key()
     return {"key": symmetric_key.hex()}
@@ -36,30 +31,26 @@ def generate_symmetric_key():
 @app.post("/symmetric/key", tags=["symmetric-key"])
 def set_symmetric_key(key: str):
     """
-       Sets the symmetric key for encryption.
-
-       Args:
-           key (str): The symmetric key provided as a hexadecimal string.
-
-       Returns:
-           dict: A message confirming the successful setting of the symmetric key.
-       """
+    Sets the symmetric key for encryption.
+    Args:
+        key (str): The symmetric key provided as a hexadecimal string.
+    Returns:
+        dict: A message confirming the successful setting of the symmetric key.
+    """
     global symmetric_key
     symmetric_key = bytes.fromhex(key)
-    return {"message": "Symmetric key set successfully"}
+    return {"message": "Symmetric key has been set."}
 
 
-@app.post("/symmetric/encode", tags=["symmetric-word"],)
+@app.post("/symmetric/encode", tags=["symmetric-word"])
 def encode_message(message: str):
     """
-       Encrypts a message using the symmetric key.
-
-       Args:
-           message (str): The message to be encrypted.
-
-       Returns:
-           dict: A dictionary containing the encrypted message.
-       """
+    Encrypts a message using the symmetric key.
+    Args:
+        message (str): The message to be encrypted.
+    Returns:
+        dict: A dictionary containing the encrypted message.
+    """
     if symmetric_key is None:
         raise HTTPException(status_code=400, detail="Symmetric key not set")
     cipher = Fernet(symmetric_key)
@@ -70,14 +61,12 @@ def encode_message(message: str):
 @app.post("/symmetric/decode", tags=["symmetric-word"])
 def decode_message(encrypted_message: str):
     """
-        Decrypts a message using the symmetric key.
-
-        Args:
-            encrypted_message (str): The encrypted message as a hexadecimal string.
-
-        Returns:
-            dict: A dictionary containing the decrypted message.
-        """
+    Decrypts a message using the symmetric key.
+    Args:
+        encrypted_message (str): The encrypted message as a hexadecimal string.
+    Returns:
+        dict: A dictionary containing the decrypted message.
+    """
     if symmetric_key is None:
         raise HTTPException(status_code=400, detail="Symmetric key not set")
     cipher = Fernet(symmetric_key)
@@ -87,16 +76,14 @@ def decode_message(encrypted_message: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail="Decryption failed")
 
-
 # Asymmetric encryption routes
 @app.get("/asymmetric/key", tags=["asymmetric-key"])
 def generate_asymmetric_key():
     """
-       Generates asymmetric public and private keys.
-
-       Returns:
-           dict: A dictionary containing the generated public and private keys.
-       """
+    Generates asymmetric public and private keys.
+    Returns:
+        dict: A dictionary containing the generated public and private keys.
+    """
     global public_key_rsa, private_key_rsa
     private_key_rsa = rsa.generate_private_key(
         public_exponent=65537,
@@ -109,22 +96,21 @@ def generate_asymmetric_key():
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ).hex()
-    private_hex = private_key_rsa.private_bytes(
+    private_pem = private_key_rsa.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption()
     ).hex()
-    return {"public_key": public_hex, "private_key": private_hex}
+    return {"public_key": public_hex, "private_key": private_pem}
 
 
 @app.get("/asymmetric/key/ssh", tags=["asymmetric-key"])
 def get_ssh_key():
     """
-       Retrieves SSH public and private keys from the generated RSA key pair.
-
-       Returns:
-           dict: A dictionary containing SSH public and private keys.
-       """
+    Retrieves SSH public and private keys from the generated RSA key pair.
+    Returns:
+        dict: A dictionary containing SSH public and private keys.
+    """
     global public_key_rsa, private_key_rsa
     if public_key_rsa is None or private_key_rsa is None:
         raise HTTPException(status_code=400, detail="Asymmetric keys not generated")
@@ -150,14 +136,12 @@ def get_ssh_key():
 @app.post("/asymmetric/key", tags=["asymmetric-key"])
 async def set_asymmetric_key(keys: dict):
     """
-       Sets the public and private keys for asymmetric encryption.
-
-       Args:
-           keys (dict): A dictionary containing the public and private keys as hexadecimal strings.
-
-       Returns:
-           dict: A message confirming the successful setting of the keys.
-       """
+    Sets the public and private keys for asymmetric encryption.
+    Args:
+        keys (dict): A dictionary containing the public and private keys as hexadecimal strings.
+    Returns:
+        dict: A message confirming the successful setting of the keys.
+    """
     global public_key_rsa, private_key_rsa
     public_hex = keys.get("public_key")
     private_hex = keys.get("private_key")
@@ -171,20 +155,18 @@ async def set_asymmetric_key(keys: dict):
         private_key_rsa = serialization.load_pem_private_key(private_bytes, password=None)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid key format")
-    return {"message": "Keys set successfully"}
+    return {"message": "Keys have been set successfully"}
 
 
 @app.post("/asymmetric/sign", tags=["asymmetric-word"])
 async def sign_message(message: str):
     """
-        Signs a message using the private key.
-
-        Args:
-            message (str): The message to be signed.
-
-        Returns:
-            dict: A dictionary containing the signature of the message.
-        """
+    Signs a message using the private key.
+    Args:
+        message (str): The message to be signed.
+    Returns:
+        dict: A dictionary containing the signature of the message.
+    """
     global private_key_rsa
     if not private_key_rsa:
         raise HTTPException(status_code=400, detail="Private key is not set")
@@ -203,15 +185,13 @@ async def sign_message(message: str):
 @app.post("/asymmetric/verify", tags=["asymmetric-word"])
 async def verify_message(message: str, signature: str):
     """
-        Verifies the signature of a message using the public key.
-
-        Args:
-            message (str): The message to be verified.
-            signature (str): The signature of the message.
-
-        Returns:
-            dict: A dictionary indicating whether the signature is valid or not.
-        """
+    Verifies the signature of a message using the public key.
+    Args:
+        message (str): The message to be verified.
+        signature (str): The signature of the message.
+    Returns:
+        dict: A dictionary indicating whether the signature is valid or not.
+    """
     global public_key_rsa
     if not public_key_rsa:
         raise HTTPException(status_code=400, detail="Public key is not set")
@@ -232,18 +212,15 @@ async def verify_message(message: str, signature: str):
     return {"is_valid": is_valid}
 
 
-
 @app.post("/asymmetric/encrypt", tags=["asymmetric-word_en/de"])
 async def encrypt_message(message: str):
     """
-       Encrypts a message using the recipient's public key.
-
-       Args:
-           message (str): The message to be encrypted.
-
-       Returns:
-           dict: A dictionary containing the encrypted ciphertext.
-       """
+    Encrypts a message using the recipient's public key.
+    Args:
+        message (str): The message to be encrypted.
+    Returns:
+        dict: A dictionary containing the encrypted ciphertext.
+    """
     global public_key_rsa
     if not public_key_rsa:
         raise HTTPException(status_code=400, detail="Public key is not set")
@@ -262,14 +239,12 @@ async def encrypt_message(message: str):
 @app.post("/asymmetric/decrypt", tags=["asymmetric-word_en/de"])
 async def decrypt_message(ciphertext: str):
     """
-       Decrypts a ciphertext using the recipient's private key.
-
-       Args:
-           ciphertext (str): The ciphertext to be decrypted.
-
-       Returns:
-           dict: A dictionary containing the decrypted plaintext.
-       """
+    Decrypts a ciphertext using the recipient's private key.
+    Args:
+        ciphertext (str): The ciphertext to be decrypted.
+    Returns:
+        dict: A dictionary containing the decrypted plaintext.
+    """
     global private_key_rsa
     if not private_key_rsa:
         raise HTTPException(status_code=400, detail="Private key is not set")
@@ -288,4 +263,3 @@ async def decrypt_message(ciphertext: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)
-
