@@ -157,7 +157,7 @@ def get_ssh_key():
     }
 
 
-@app.post("/asymmetric/key", tags=["asymmetric-ssh"])
+@app.post("/asymmetric/key", tags=["asymmetric-key"])
 async def set_asymmetric_key(keys: dict):
     """
        Sets the public and private keys for asymmetric encryption.
