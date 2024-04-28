@@ -1,32 +1,22 @@
 import logging
 from typing import Union
-from fastapi import Request, Form
-import jinja2
-import requests
 from cryptography.exceptions import InvalidSignature
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, HTTPException
 import base64
 import paramiko
 import binascii
 from cryptography.fernet import Fernet
 import secrets
 app = FastAPI()
-templates = Jinja2Templates(directory="./templates")
 
 # Global variables to store keys
 symmetric_key = None
 public_key_rsa = None
 private_key_rsa = None
-
-# @app.get("/", response_class=HTMLResponse)
-# async def index(request: Request):
-#     return templates.TemplateResponse("index.html", {"request": request})
 
 # Symmetric encryption routes
 @app.get("/symmetric/key", tags=["symmetric-key"])
